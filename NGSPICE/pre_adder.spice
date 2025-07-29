@@ -1,0 +1,99 @@
+
+.include gates.spice
+**** inputs *******************************
+v1 a01 gnd pulse 0 1.8 2n 0n 0n 5n 9n
+v2 a02 gnd pulse 0 1.8 2n 0n 0n 5n 9n
+v3 a03 gnd pulse 0 1.8 2n 0n 0n 5n 9n
+v4 a04 gnd 0
+
+v11 b01 gnd 0
+v12 b02 gnd 0
+v13 b03 gnd 0
+v14 b04 gnd pulse 0 1.8 2n 0n 0n 5n 9n
+
+v0 clk gnd pulse 0 1.8 0n 0n 0n 3n 7n
+*********************************************
+
+******dff inputs******************************
+
+xdff1 a01 a1 clk vdd gnd dff
+xdff2 a02 a2 clk vdd gnd dff
+xdff3 a03 a3 clk vdd gnd dff
+xdff4 a04 a4 clk vdd gnd dff
+
+xdff11 b01 b1 clk vdd gnd dff
+xdff12 b02 b2 clk vdd gnd dff
+xdff13 b03 b3 clk vdd gnd dff
+xdff14 b04 b4 clk vdd gnd dff
+
+*************************************
+
+********P/G generator*****************
+
+xp1 a1 b1 p1 vdd gnd xor
+xp2 a2 b2 p2 vdd gnd xor
+xp3 a3 b3 p3 vdd gnd xor
+xp4 a4 b4 p4 vdd gnd xor
+
+xg1 a1 b1 1g1 vdd gnd nand
+xg2 a2 b2 1g2 vdd gnd nand
+xg3 a3 b3 1g3 vdd gnd nand
+xg4 a4 b4 1g4 vdd gnd nand
+
+***********************************
+
+xCLA p1 1g1 p2 1g2 p3 1g3 p4 1g4 c1 c2 c3 c4 vdd gnd cla
+
+**************sum calculator*************
+
+xS2 p2 c1 S02 vdd gnd xor
+xS3 p3 c2 S03 vdd gnd xor
+xS4 p4 c3 S04 vdd gnd xor
+
+*****************************************
+
+***********output dff********************
+
+xdffs1 p1 S1 clk vdd gnd dff
+xdffs2 S02 S2 clk vdd gnd dff
+xdffs3 S03 S3 clk vdd gnd dff
+xdffs4 S04 S4 clk vdd gnd dff
+xdffs5 c4  S5 clk vdd gnd dff
+
+****************************************
+
+xload1 S1 s11 vdd gnd inv
+xload2 S2 s12 vdd gnd inv
+xload3 S3 s13 vdd gnd inv
+xload4 S4 s14 vdd gnd inv
+
+.ic v(s01) = 0
+.ic v(s02) = 0
+.ic v(s03) = 0
+.ic v(s04) = 0
+
+.ic v(S1) = 0
+.ic v(S2) = 0
+.ic v(S3) = 0
+.ic v(S4) = 0
+
+.measure tran tpdf
++ TRIG v(clk) VAL='SUPPLY/2' RISE=1
++ TARG v(a1) VAL='SUPPLY/2' FALL=1
+
+.measure tran tpdr
++ TRIG v(clk) VAL='SUPPLY/2' RISE=2
++ TARG v(a1) VAL='SUPPLY/2' RISE=1
+
+.measure tran tpcq param='(tpdr+tpdf)/2' goal=0
+
+.tran 0.1n 50n
+.control
+  run
+  plot v(s1) 3+v(s2) 6+v(s3) 9+v(s4) 12+v(s5) 15+v(a1) 18+v(clk)
+  plot v(c1) 3+v(c2) 6+v(c3) 9+v(c4)
+  * plot v(a1) 3+v(c4)
+  * plot v(clk) 3+v(s5)
+.endc
+.end
+
